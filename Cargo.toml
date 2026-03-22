@@ -2,7 +2,7 @@
 name = "fudajiku"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.89.0"
+rust-version = "1.91.0"
 license = "MIT"
 description = "BLAKE3 content-addressed manifest tracking with JSON persistence"
 repository = "https://github.com/pleme-io/fudajiku"

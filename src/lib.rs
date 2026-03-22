@@ -225,4 +225,85 @@ mod tests {
         let h3 = hash_bytes(b"world");
         assert_ne!(h1, h3);
     }
+
+    #[test]
+    fn manifest_keys_returns_all_keys() {
+        let mut m = Manifest::new();
+        let h1 = hash_bytes(b"aaa");
+        let h2 = hash_bytes(b"bbb");
+        let h3 = hash_bytes(b"ccc");
+        m.record("alpha", "/local/alpha", h1, 3);
+        m.record("beta", "/local/beta", h2, 3);
+        m.record("gamma", "/local/gamma", h3, 3);
+
+        let mut keys = m.keys();
+        keys.sort();
+        assert_eq!(keys, vec!["alpha", "beta", "gamma"]);
+    }
+
+    #[test]
+    fn manifest_total_size_sums_all_entries() {
+        let mut m = Manifest::new();
+        m.record("a", "/a", hash_bytes(b"x"), 100);
+        m.record("b", "/b", hash_bytes(b"y"), 250);
+        m.record("c", "/c", hash_bytes(b"z"), 50);
+
+        assert_eq!(m.total_size(), 400);
+    }
+
+    #[test]
+    fn manifest_len_and_is_empty_after_operations() {
+        let mut m = Manifest::new();
+        assert!(m.is_empty());
+        assert_eq!(m.len(), 0);
+
+        m.record("one", "/one", hash_bytes(b"1"), 1);
+        assert!(!m.is_empty());
+        assert_eq!(m.len(), 1);
+
+        m.record("two", "/two", hash_bytes(b"2"), 2);
+        assert_eq!(m.len(), 2);
+
+        m.remove("one");
+        assert_eq!(m.len(), 1);
+
+        m.remove("two");
+        assert!(m.is_empty());
+        assert_eq!(m.len(), 0);
+    }
+
+    #[test]
+    fn remove_nonexistent_key_returns_none() {
+        let mut m = Manifest::new();
+        m.record("exists", "/exists", hash_bytes(b"data"), 4);
+
+        let result = m.remove("does_not_exist");
+        assert!(result.is_none());
+
+        // Original entry should still be present
+        assert_eq!(m.len(), 1);
+    }
+
+    #[test]
+    fn hash_bytes_produces_different_hashes_for_different_inputs() {
+        let inputs: Vec<&[u8]> = vec![
+            b"hello world",
+            b"hello worlD",
+            b"",
+            b"\x00",
+            b"hello world\n",
+        ];
+        let hashes: Vec<_> = inputs.iter().map(|i| hash_bytes(i)).collect();
+
+        // All hashes must be unique
+        for i in 0..hashes.len() {
+            for j in (i + 1)..hashes.len() {
+                assert_ne!(
+                    hashes[i], hashes[j],
+                    "inputs {:?} and {:?} produced the same hash",
+                    inputs[i], inputs[j]
+                );
+            }
+        }
+    }
 }
